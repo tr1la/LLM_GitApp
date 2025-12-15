@@ -1,3 +1,4 @@
+import openai  # Added import for OpenAI
 from ast import List
 import re
 from tempfile import NamedTemporaryFile
@@ -9,17 +10,12 @@ from ..config import config
 from gtts import gTTS
 
 # --- Mới: Thêm các thư viện cho Google Gemini và xử lý ảnh ---
-import google.generativeai as genai
 import base64
 import io
 from PIL import Image
 # -------------------------------------------------------------
 
 # Cấu hình Google API một lần khi import module
-if config.GOOGLE_API_KEY:
-    genai.configure(api_key=config.GOOGLE_API_KEY)
-else:
-    logging.warning("GOOGLE_API_KEY is missing in config")
 
 def segment_text_by_sentence(text):
     sentence_boundaries = re.finditer(r'(?<=[.!?])\s+', text)
@@ -59,11 +55,7 @@ def format_response_distance_estimate_with_openai(response, transcribe, base64_i
         if response is None or len(response) == 0:
             return "No objects detected at the moment."
             
-        if not config.GOOGLE_API_KEY:
-            logging.error("Google API key is missing")
-            return str(response)
-
-        logging.info(f"Processing response with Gemini: {response}")
+        logging.info(f"Processing response with OpenAI: {response}")
 
         # System Prompt
         system_prompt = """
@@ -83,12 +75,9 @@ def format_response_distance_estimate_with_openai(response, transcribe, base64_i
             4. The [object] is located at [final position]."
         """
 
-        # Khởi tạo model Gemini
-        model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash",
-            system_instruction=system_prompt
-        )
-
+        # Use OpenAI instead of Gemini
+        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        
         # Xử lý ảnh: Decode Base64 thành PIL Image
         try:
             image_data = base64.b64decode(base64_image)
@@ -100,17 +89,32 @@ def format_response_distance_estimate_with_openai(response, transcribe, base64_i
         # Tạo nội dung prompt (Text + Image)
         user_prompt = f"Object Detection Data: {str(response)}\nUser Transcription/Request: {transcribe}"
         
-        # Gửi request (Gemini nhận list gồm text và image object)
-        response_gemini = model.generate_content([user_prompt, image])
+        # Convert image to base64 for OpenAI
+        buffered = io.BytesIO()
+        image.save(buffered, format="JPEG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+        
+        # Gửi request đến OpenAI
+        response_openai = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": [
+                    {"type": "text", "text": user_prompt},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_str}"}}
+                ]}
+            ],
+            max_tokens=500
+        )
 
-        formatted_response = response_gemini.text.strip()
+        formatted_response = response_openai.choices[0].message.content.strip()
         
         logging.info(f"Formatted response: {formatted_response}")
 
         return formatted_response
 
     except Exception as e:
-        logging.error(f"Unexpected error in distance estimation (Google): {e}")
+        logging.error(f"Unexpected error in distance estimation (OpenAI): {e}")
         return str(response)
     
 def format_response_product_recognition_with_openai(response):
@@ -118,10 +122,6 @@ def format_response_product_recognition_with_openai(response):
     (Tên hàm giữ nguyên để tránh sửa main.py, nhưng bên trong dùng Google Gemini)
     """
     try:
-        if not config.GOOGLE_API_KEY:
-            logging.error("Google API key is missing")
-            return str(response)
-
         # System Prompt
         system_prompt = """
         Your task is to convert product information into a detailed, easy-to-understand, and engaging paragraph in English.
@@ -144,21 +144,25 @@ def format_response_product_recognition_with_openai(response):
         [Detailed breakdown of energy, fat, carbohydrates, and protein]"
         """
 
-        # Khởi tạo model Gemini
-        model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash",
-            system_instruction=system_prompt
+        # Use OpenAI instead of Gemini
+        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        
+        # Gửi request đến OpenAI
+        response_openai = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": str(response)}
+            ],
+            max_tokens=500
         )
 
-        # Gửi request
-        response_gemini = model.generate_content(str(response))
-
-        formatted_description = response_gemini.text.strip()
+        formatted_description = response_openai.choices[0].message.content.strip()
         
         return formatted_description
 
     except Exception as e:
-        logging.error(f"Unexpected error in product information processing (Google): {e}")
+        logging.error(f"Unexpected error in product information processing (OpenAI): {e}")
         return str(response)
 
 def format_response_music_detection_with_openai(response):

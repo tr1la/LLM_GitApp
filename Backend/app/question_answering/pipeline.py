@@ -1,4 +1,4 @@
-import google.generativeai as genai
+import openai  # Added import for OpenAI
 import os
 from fastapi import HTTPException
 from dotenv import load_dotenv # <--- 1. Thêm thư viện này
@@ -13,11 +13,8 @@ if api_key:
 else:
     print("❌ GOOGLE_API_KEY is missing!")
 
-if not api_key:
-    raise ValueError("GOOGLE_API_KEY not found in environment variables")
 
 # Cấu hình
-genai.configure(api_key = config.GOOGLE_API_KEY)
 
 def ask_general_question(question: str) -> str:
     system_prompt = (
@@ -27,18 +24,24 @@ def ask_general_question(question: str) -> str:
     )
 
     try:
-        model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash",
-            system_instruction=system_prompt
-        )
-
-        response = model.generate_content(question)
         
-        # Kiểm tra nếu bị chặn do safety filter
-        if not response.text:
+        # Use OpenAI instead of Gemini
+        client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": question}
+            ],
+            max_tokens=500,
+            temperature=0.7
+        )
+        
+        if not response.choices or not response.choices[0].message.content:
             return "I cannot answer this question due to safety filters."
-
-        return response.text.strip()
+            
+        return response.choices[0].message.content.strip()
 
     except Exception as e:
         print(f"Google API Error: {e}")

@@ -95,11 +95,6 @@ Expected output:
 def get_llm(provider: str):
     if provider == "openai":
         return ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
-    elif provider == "gemini":
-        if not GOOGLE_API_KEY:
-            raise ValueError("GOOGLE_API_KEY is required for Gemini provider")
-        print(f"[DEBUG] Initializing Gemini with API key: {GOOGLE_API_KEY[:20]}...", flush=True)
-        return ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.2, google_api_key=GOOGLE_API_KEY)
     elif provider == "groq":
         if not GROQ_API_KEY:
             raise ValueError("GROQ_API_KEY is required for Groq provider")
@@ -185,7 +180,7 @@ def fetch_book_main_info(isbn: str) -> Optional[dict]:
     return result
 
 
-def get_llm_response(query: str, task: str, base64_image: Optional[str] = None, provider: str = "gemini"):
+def get_llm_response(query: str, task: str, base64_image: Optional[str] = None, provider: str = "openai"):
     llm = get_llm(provider)
     prompt = get_task_prompt(task)
 
@@ -223,7 +218,7 @@ def get_llm_response(query: str, task: str, base64_image: Optional[str] = None, 
 if __name__ == "__main__":
     # Example usage
     task = "image_captioning"
-    provider = "gemini"
+    provider = "openai"  # Changed from "gemini" to "openai"
     image_path = "./examples/image_captioning.png"
 
     base64_image = base64.b64encode(open(image_path, "rb").read()).decode("utf-8")

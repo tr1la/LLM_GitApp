@@ -1,28 +1,23 @@
 #!/usr/bin/env python3
-"""
-Test the full LLM pipeline
-"""
-import sys
-sys.path.insert(0, '/Users/tr1la/Documents/LLMProj/LLM_application/ml_service')
 
 from app.all_task.pipeline import get_llm_response
+import base64
 
-try:
-    print("Testing full LLM pipeline...")
-    print("-" * 60)
+if __name__ == "__main__":
+    # Test with a sample image
+    image_path = "./examples/image_captioning.png"
     
-    response = get_llm_response(
-        query="What is 2 + 2?",
-        task="general_question_answering",
-        base64_image=None,
-        provider="gemini"
-    )
-    
-    print(f"✅ SUCCESS!")
-    print(f"Response: {response}")
-    
-except Exception as e:
-    print(f"❌ ERROR: {type(e).__name__}")
-    print(f"Message: {e}")
-    import traceback
-    traceback.print_exc()
+    try:
+        with open(image_path, "rb") as image_file:
+            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+        
+        # Updated:response = get_llm_response("Describe this image", "image_captioning", base64_image, provider="gemini")
+        response = get_llm_response("Describe this image", "image_captioning", base64_image, provider="openai")  # Changed from "gemini" to "openai"
+        print("Response:", response)
+        
+    except FileNotFoundError:
+        print(f"Image file not found at {image_path}")
+        print("Testing without image...")
+        # Updated:response = get_llm_response("What is the capital of France?", "general_question_answering", None, provider="gemini")
+        response = get_llm_response("What is the capital of France?", "general_question_answering", None, provider="openai")  # Changed from "gemini" to "openai"
+        print("Response:", response)

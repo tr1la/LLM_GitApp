@@ -25,11 +25,9 @@ class ArticleExample:
         self.url = url
 
 # ---- LLM SWITCHER ----
-def get_llm(provider="openai"):
+def get_llm(provider: str):
     if provider == "openai":
         return ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
-    elif provider == "gemini":
-        return ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.7, google_api_key=os.getenv("GOOGLE_API_KEY"))
     elif provider == "groq":
         return ChatGroq(model="llama3-8b-8192", groq_api_key=os.getenv("GROQ_API_KEY"))
     else:
@@ -135,7 +133,8 @@ def speak_text(text):
 
 
 # ---- PIPELINE ----
-def execute_pipeline(user_query: str, provider="gemini"):
+def execute_pipeline(user_query: str, provider="openai"):  # Changed default from "gemini" to "openai"
+    # 1. Get LLM
     llm = get_llm(provider)
 
     print(f"🔍 Original Query:\n{user_query}\n")
@@ -166,5 +165,5 @@ def execute_pipeline(user_query: str, provider="gemini"):
 
 # ---- MAIN ----
 if __name__ == "__main__":
-    query = "Comparisons between OpenAI O3 and Gemini 2.0"
-    execute_pipeline(query, provider="gemini")  # Options: "openai", "gemini", "groq"
+    query = input("Enter your query: ")
+    execute_pipeline(query, provider="openai")  # Options: "openai", "gemini", "groq"
