@@ -12,33 +12,37 @@
       <!-- Feature Display Area (Right Side) -->
       <div class="flex flex-1 flex-col p-4">
         <!-- Feature Content -->
-        <div class="flex-grow space-y-4 mb-4 pr-2 overflow-hidden">
-          <!-- Camera Feature -->
-          <div class="flex justify-center w-full h-full">
+        <div class="flex-grow mb-4 pr-2">
+          <!-- Camera Feature (Text Recognition) -->
+          <div v-if="selectedFeature === 'Text'" class="flex justify-center w-full h-full">
             <ClientOnly>
-              <CameraFeature v-if="['Text'].includes(selectedFeature)"
-                ref="cameraFeatureRef" :featureType="selectedFeature" @take-snapshot="handleSnapshot" />
+              <CameraFeature 
+                ref="cameraFeatureRef" 
+                :featureType="selectedFeature" 
+                @take-snapshot="handleSnapshot" />
             </ClientOnly>
           </div>
           
           <!-- Response from camera -->
-          <div v-if="cameraResponseText"
-            class="bg-green-100 rounded-lg mx-auto p-4 shadow-md max-w-xl text-center max-h-60 overflow-y-auto"
+          <div v-if="cameraResponseText && selectedFeature === 'Text'"
+            class="bg-green-100 rounded-lg mx-auto p-4 shadow-md max-w-xl text-center max-h-60 overflow-y-auto mt-4"
             ref="responseElement">
             <p class="text-green-800 font-medium">{{ cameraResponseText }}</p>
           </div>
           
-          <!-- Other Features -->
-          <div class="flex justify-center w-full h-full">
-            <SpotifyFeature v-if="selectedFeature === 'Music'" class="w-full" />
+          <!-- Music Feature -->
+          <div v-if="selectedFeature === 'Music'" class="flex justify-center w-full h-full">
+            <SpotifyFeature class="w-full" />
           </div>
           
-          <div class="flex justify-center w-full h-full">
-            <NewsFeature v-if="selectedFeature === 'News'" class="w-full" />
+          <!-- News Feature -->
+          <div v-if="selectedFeature === 'News'" class="flex justify-center w-full h-full">
+            <NewsFeature class="w-full" />
           </div>
           
-          <div class="flex justify-center w-full h-full">
-            <ChatFeature v-if="selectedFeature === 'Chatbot'" class="w-full" />
+          <!-- Chatbot Feature -->
+          <div v-if="selectedFeature === 'Chatbot'" class="flex justify-center w-full h-full">
+            <ChatFeature class="w-full" />
           </div>
         </div>
         
