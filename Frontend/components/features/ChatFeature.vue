@@ -1,12 +1,12 @@
 <template>
-  <div class="flex flex-col items-center w-full p-4">
+  <div class="flex flex-col items-center w-full p-4 h-full">
     <h2 class="text-2xl font-bold mb-4 text-gray-800">💬 Chat Assistant</h2>
 
-    <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-4 border border-gray-200">
+    <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-4 border border-gray-200 flex flex-col h-full max-h-[500px]">
       <!-- Chat Messages -->
       <div
         ref="chatContainer"
-        class="bg-gray-100 rounded-md p-3 h-80 overflow-y-auto space-y-2 mb-4 scroll-smooth"
+        class="bg-gray-100 rounded-md p-3 overflow-y-auto space-y-2 mb-4 scroll-smooth flex-grow"
         aria-live="polite"
         aria-label="Chat messages"
       >

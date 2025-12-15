@@ -15,11 +15,7 @@ export function useApiService() {
 
     const endpoints: Record<string, string> = {
         'Text': '/document_recognition',
-        'Currency': '/currency_detection',
-        'Object': '/image_captioning',
-        'Product': '/product_recognition',
-        'Distance': '/distance_estimate_v2',
-        'Face': '/face_detection/recognize',
+        // Removed Currency, Object, Product, Distance, Face endpoints
         'Music': '/',
     }
 

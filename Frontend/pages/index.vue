@@ -1,47 +1,47 @@
 <template>
   <div class="flex flex-col min-h-screen bg-gradient-to-br from-blue-100 via-white to-green-100">
     <NavBar />
-
+    
     <!-- Main Content: Vertical Button Bar + Feature Components -->
     <div class="flex flex-grow">
       <!-- Vertical Button Bar -->
-      <div class="bg-blue-200 p-2 flex flex-col space-y-2 min-w-[100px] shadow-lg">
+      <div class="bg-blue-200 p-2 flex flex-col min-w-[80px] shadow-lg">
         <ButtonBar :selectedFeature="selectedFeature" @update:selectedFeature="updateSelectedFeature" />
       </div>
-
+      
       <!-- Feature Display Area (Right Side) -->
       <div class="flex flex-1 flex-col p-4">
         <!-- Feature Content -->
-        <div class="flex-grow space-y-4 mb-4 pr-2">
+        <div class="flex-grow space-y-4 mb-4 pr-2 overflow-hidden">
           <!-- Camera Feature -->
-          <div class="flex justify-center w-full">
+          <div class="flex justify-center w-full h-full">
             <ClientOnly>
-              <CameraFeature v-if="['Text', 'Currency', 'Object', 'Distance', 'Product'].includes(selectedFeature)"
+              <CameraFeature v-if="['Text'].includes(selectedFeature)"
                 ref="cameraFeatureRef" :featureType="selectedFeature" @take-snapshot="handleSnapshot" />
             </ClientOnly>
           </div>
-
+          
           <!-- Response from camera -->
           <div v-if="cameraResponseText"
             class="bg-green-100 rounded-lg mx-auto p-4 shadow-md max-w-xl text-center max-h-60 overflow-y-auto"
             ref="responseElement">
             <p class="text-green-800 font-medium">{{ cameraResponseText }}</p>
           </div>
-
+          
           <!-- Other Features -->
-          <div class="flex justify-center w-full">
-            <SpotifyFeature v-if="selectedFeature === 'Music'" />
+          <div class="flex justify-center w-full h-full">
+            <SpotifyFeature v-if="selectedFeature === 'Music'" class="w-full" />
           </div>
           
-          <div class="flex justify-center w-full">
-            <NewsFeature v-if="selectedFeature === 'News'" />
+          <div class="flex justify-center w-full h-full">
+            <NewsFeature v-if="selectedFeature === 'News'" class="w-full" />
           </div>
           
-          <div class="flex justify-center w-full">
-            <ChatFeature v-if="selectedFeature === 'Chatbot'" />
+          <div class="flex justify-center w-full h-full">
+            <ChatFeature v-if="selectedFeature === 'Chatbot'" class="w-full" />
           </div>
         </div>
-
+        
         <!-- Voice Command and Visualizer (Fixed at bottom) -->
         <div class="flex flex-col items-center w-full max-w-md mx-auto">
           <VoiceCommand :selectedFeature="selectedFeature" :cameraRef="cameraFeatureRef"
@@ -49,11 +49,11 @@
         </div>
       </div>
     </div>
-
+    
     <!-- Spotify Mini Player -->
     <!--<SpotifyMiniPlayer v-if="spotifyStore.currentTrack && selectedFeature === 'Music'"
       @open-spotify-feature="openSpotifyFeature" /> -->
-
+    
     <!-- Modals -->
     <SettingsModal :show="isSettingsModalOpen" @close="isSettingsModalOpen = false" />
     <AboutModal :show="isAboutModalOpen" @close="isAboutModalOpen = false" />

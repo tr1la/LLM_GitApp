@@ -1,10 +1,10 @@
 <template>
-  <div class="flex flex-col space-y-4">
+  <div class="flex flex-col h-full py-4 justify-around">
     <button 
       v-for="button in buttons" 
       :key="button.name"
       @click="selectButton(button.name)"
-      class="btn btn-circle focus:outline-none focus:ring-2 focus:ring-blue-500"
+      class="btn btn-circle focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
       :class="props.selectedFeature === button.name ? 'btn-primary' : 'btn-ghost'"
       :aria-label="`Switch to ${button.name} mode`"
       :title="`Switch to ${button.name} mode`"
@@ -28,10 +28,6 @@ const emit = defineEmits(['update:selectedFeature']);
 
 const buttons = [
   { name: 'Text', icon: 'fa-solid fa-quote-right' },
-  { name: 'Currency', icon: 'fa-solid fa-dollar-sign' },
-  { name: 'Object', icon: 'fa-solid fa-cube' },
-  { name: 'Product', icon: 'fa-solid fa-box' },
-  { name: 'Distance', icon: 'fa-solid fa-ruler' },
   { name: 'Music', icon: 'fa-solid fa-music' },
   { name: 'Chatbot', icon: 'fa-solid fa-comments' },
   { name: 'News', icon: 'fa-solid fa-newspaper' },
@@ -56,6 +52,8 @@ const selectButton = (name: string) => {
   border-radius: 50%;
   font-size: 1.25rem;
   transition: transform 0.2s ease, background-color 0.2s ease;
+  margin: 0 auto;
+  flex-shrink: 0;
 }
 
 .btn:hover {
