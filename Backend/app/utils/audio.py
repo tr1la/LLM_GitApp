@@ -1,4 +1,3 @@
-
 from collections import OrderedDict
 from sentence_transformers import SentenceTransformer, util
 
@@ -18,26 +17,6 @@ raw_feature_labels = OrderedDict({
     "Text": [
         "text", "document", "page", "story", "paragraph", "content", 
         "read aloud", "narrate", "text to speech"
-    ],
-    "Currency": [
-        "money", "bill", "coin", "cash", "cost", "amount", "price", "total", "currency", 
-        "value", "convert currency", "exchange rate"
-    ],
-    "Object": [
-        "object", "describe", "thing", "what is this", "identify", "scan", 
-        "detection", "look for", "object recognition"
-    ],
-    "Product": [
-        "product", "brand", "logo", "item", "product name", "identify product", "check product", 
-        "product details", "product information"
-    ],
-    "Distance": [
-        "distance", "range", "how far", "measure", "long", "distance to", "how far is", 
-        "how much is the distance", "measure distance", "range of"
-    ],
-    "Face": [
-        "face", "who is this", "person", "identify person", "recognize face", "face recognition", 
-        "who is the person", "show me the face"
     ],
     "Music": [
         "music", "track", "what's playing", "music track", "listen", "audio"
@@ -87,11 +66,6 @@ NAVIGATION_TRIGGERS = [
 
 FEATURE_NAMES = { # Simplified for clarity, map name to canonical key
     "Text": ["text", "reading", "read aloud", "narrate"],
-    "Currency": ["currency", "money", "exchange"],
-    "Object": ["object", "thing", "item identification", "find"], # Added 'find' here
-    "Product": ["product", "barcode", "logo", "brand"],
-    "Distance": ["distance", "measurement", "how far", "range"],
-    "Face": ["face", "person", "recognition", "who is this"],
     "Music": ["music", "song", "track", "audio", "listen"], # Added audio/listen
     "News": ["news", "articles", "headlines", "summary"],
     "Chatbot": ["chat", "talk", "ask", "question", "assistant"],
