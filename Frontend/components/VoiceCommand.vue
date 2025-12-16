@@ -37,7 +37,6 @@ import { useSpotifyStore } from '@/stores/spotify';
 import { useNewsStore } from '@/stores/news';
 import { useChatbotStore } from '@/stores/chatbot'
 
-
 const chatbotStore = useChatbotStore()
 
 const newsStore = useNewsStore();
@@ -56,12 +55,14 @@ const decibelLevel = ref(0);
 const feedback = ref<string | null>(null);
 const feedbackType = ref<'success' | 'error' | 'info'>('info');
 const lastTranscript = ref<string | null>(null);
+const isSpeaking = ref(false); // New state to track if system is speaking
 
 let mediaRecorder: MediaRecorder | null = null;
 let audioChunks: Blob[] = [];
 let audioContext: AudioContext | null = null;
 let analyser: AnalyserNode | null = null;
 let intervalId: ReturnType<typeof setInterval>;
+let speechCheckInterval: ReturnType<typeof setInterval>; // Interval to check if system is speaking
 
 // Constants
 const DECIBEL_THRESHOLD = 10;
@@ -87,32 +88,6 @@ const featureCommands = {
     'save': ['save', 'save text', 'remember'],
     'capture': ['capture', 'take a picture', 'snapshot'],
   },
-  'Currency': {
-    'convert': ['convert', 'exchange', 'calculate'],
-    'compare': ['compare', 'difference'],
-    'capture': ['capture', 'take a picture', 'snapshot'],
-  },
-  'Object': {
-    'identify': ['identify', 'what is this', 'object'],
-    'describe': ['describe', 'details', 'tell me more'],
-    'capture': ['capture', 'take a picture', 'snapshot'],
-  },
-  'Product': {
-    'search': ['search', 'find similar', 'shop'],
-    'price': ['price', 'how much', 'cost'],
-    'reviews': ['reviews', 'ratings'],
-    'capture': ['capture', 'take a picture', 'snapshot'],
-  },
-  'Distance': {
-    'measure': ['measure', 'how far', 'distance'],
-    'compare': ['compare', 'difference'],
-    'capture': ['capture', 'take a picture', 'snapshot'],
-  },
-  'Face': {
-    'identify': ['identify', 'who is this', 'recognize'],
-    'remember': ['remember', 'save face', 'add person'],
-    'capture': ['capture', 'take a picture', 'snapshot'],
-  },
   'Music': {
     'detect': ['detect', 'what song', 'identify song', 'recognize'],
     'play': ['play', 'start', 'resume'],
@@ -133,6 +108,22 @@ const cancelSpeech = () => {
   if (speechSynthesis.speaking) {
     speechSynthesis.cancel();
     console.log('🛑 Speech synthesis canceled due to user speaking.');
+    isSpeaking.value = false; // Update speaking state
+  }
+};
+
+// Function to check if system is currently speaking
+const checkIfSpeaking = () => {
+  if (speechSynthesis.speaking && !isSpeaking.value) {
+    // System started speaking, pause recording
+    isSpeaking.value = true;
+    stopRecording();
+    console.log('🎙️ Paused recording because system is speaking');
+  } else if (!speechSynthesis.speaking && isSpeaking.value) {
+    // System finished speaking, resume recording
+    isSpeaking.value = false;
+    console.log('🎙️ Resuming recording because system finished speaking');
+    startRecording();
   }
 };
 
@@ -145,7 +136,6 @@ const getAvailableCommands = () => {
   const featureSpecific = Object.keys((featureCommands as Record<string, Record<string, string[]>>)[props.selectedFeature]).join(', ');
   return `Feature: ${featureSpecific} | Global: ${global}`;
 };
-
 
 //////////////// ARTICLE_SECTION //////////////////////
 
@@ -161,6 +151,7 @@ const ordinalMap: Record<string, number> = {
   ninth: 8,
   tenth: 9
 };
+
 const getArticleIndexFromCommand = (command: string): number | null => {
   const lower = command.toLowerCase();
 
@@ -200,8 +191,8 @@ const speakArticle = async (article: { title: string; summary: string }) => {
 
 // Start voice recording
 const startRecording = async () => {
-  // If recording is already active, do nothing
-  if (isRecording.value) return;
+  // If recording is already active or system is speaking, do nothing
+  if (isRecording.value || speechSynthesis.speaking) return;
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -253,7 +244,6 @@ const startRecording = async () => {
     mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
 
     mediaRecorder.onstop = async () => {
-
       // Don't process if we manually stopped recording for music detection
       if (!isRecording.value) {
         console.log('Recording stopped manually. Skipping processing.');
@@ -276,7 +266,6 @@ const startRecording = async () => {
       // Process the audio for commands
       const blob = new Blob(audioChunks, { type: 'audio/webm' });
       const data = await $sendAudioForCommand(props.selectedFeature, blob);
-
 
       const commandText = data.command;
 
@@ -434,12 +423,8 @@ const executeGlobalCommand = async (action: string) => {
   }
 };
 
-
-
 // Execute the matched command
 const executeCommand = async (feature: string, action: string, originalCommand: string) => {
-  // showFeedback(`Executing: ${action} for ${feature}`);
-
   console.log(`Executing command: ${action} for feature: ${feature}`);
 
   switch (feature) {
@@ -447,11 +432,6 @@ const executeCommand = async (feature: string, action: string, originalCommand: 
       await executeMusicCommand(action);
       break;
     case 'Text':
-    case 'Currency':
-    case 'Object':
-    case 'Product':
-    case 'Distance':
-    case 'Face':
       await executeCameraCommand(feature);
       break;
     case 'Chatbot':
@@ -546,11 +526,13 @@ const showFeedback = async (message: string, type: 'success' | 'error' | 'info' 
 const speak = (text: string): Promise<void> => {
   return new Promise(resolve => {
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.onend = () => resolve();
+    utterance.onend = () => {
+      console.log('🔊 Finished speaking');
+      resolve();
+    };
     speechSynthesis.speak(utterance);
   });
 };
-
 
 const stopRecording = async () => {
   isRecording.value = false;
@@ -581,12 +563,18 @@ const stopRecording = async () => {
 // Lifecycle hooks
 onMounted(() => {
   startRecording();
+  // Start checking if system is speaking
+  speechCheckInterval = setInterval(checkIfSpeaking, 100); // Check every 100ms
 });
 
 onUnmounted(() => {
   stopRecording();
   if (feedbackTimeout) {
     clearTimeout(feedbackTimeout);
+  }
+  // Clear the speech check interval
+  if (speechCheckInterval) {
+    clearInterval(speechCheckInterval);
   }
 });
 </script>
