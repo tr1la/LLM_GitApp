@@ -10,4 +10,5 @@ __pycache__/
 build/
 .nuxt/
 .output/
+.env
 # Bỏ qua tệp cấu hình môi trường
