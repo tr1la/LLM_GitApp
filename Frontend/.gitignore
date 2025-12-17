@@ -4,7 +4,7 @@
 # Bỏ qua thư mục node_modules và các tệp .DS_Store
 node_modules/
 .DS_Store
-app/__pycache__/
+__pycache__/
 .venv/
 # Bỏ qua thư mục build
 build/

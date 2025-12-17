@@ -14,20 +14,20 @@
         <!-- Feature Content -->
         <div class="flex-grow mb-4 pr-2">
           <!-- Camera Feature (Text Recognition) -->
-          <div v-if="selectedFeature === 'Text'" class="flex justify-center w-full h-full">
+          <div v-if="selectedFeature === 'Text'" class="flex flex-col items-center w-full">
             <ClientOnly>
               <CameraFeature 
                 ref="cameraFeatureRef" 
                 :featureType="selectedFeature" 
                 @take-snapshot="handleSnapshot" />
             </ClientOnly>
-          </div>
-          
-          <!-- Response from camera -->
-          <div v-if="cameraResponseText && selectedFeature === 'Text'"
-            class="bg-green-100 rounded-lg mx-auto p-4 shadow-md max-w-xl text-center max-h-60 overflow-y-auto mt-4"
-            ref="responseElement">
-            <p class="text-green-800 font-medium">{{ cameraResponseText }}</p>
+            
+            <!-- Response from camera - positioned right under the "Take Snapshot" button -->
+            <div v-if="cameraResponseText && selectedFeature === 'Text'"
+              class="bg-green-100 rounded-lg mx-auto p-4 shadow-md max-w-xl text-center max-h-60 overflow-y-auto mt-4 w-full max-w-xs"
+              ref="responseElement">
+              <p class="text-green-800 font-medium">{{ cameraResponseText }}</p>
+            </div>
           </div>
           
           <!-- Music Feature -->
