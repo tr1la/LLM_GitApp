@@ -1,6 +1,7 @@
 # Bỏ qua tất cả các tệp .log
 *.log
-
+*.pyc 
+*.pyo
 # Bỏ qua thư mục node_modules và các tệp .DS_Store
 node_modules/
 .DS_Store

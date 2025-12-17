@@ -9,14 +9,48 @@ import openai
 from pydantic import BaseModel, Json
 from sympy import content
 
+import time
+
 # Preload Whisper model for better performance
-try:
-    import whisper
-    whisper_model = whisper.load_model("turbo")
-    print("✅ Whisper model loaded successfully")
-except Exception as e:
-    print(f"⚠️  Failed to load Whisper model: {e}")
-    whisper_model = None
+whisper_model = None
+whisper_model_timestamp = 0
+whisper_model_loading = False  # Flag to prevent concurrent loading
+WHISPER_MODEL_CACHE_DURATION = 3600  # Cache for 1 hour
+
+def load_whisper_model():
+    global whisper_model, whisper_model_timestamp, whisper_model_loading
+    
+    # Prevent concurrent loading
+    if whisper_model_loading:
+        print("⏳ Whisper model is already loading, waiting...")
+        # Wait until loading is complete (simple approach)
+        while whisper_model_loading:
+            time.sleep(0.1)
+        return whisper_model
+    
+    # Check if model needs to be refreshed (cache invalidation)
+    current_time = time.time()
+    if whisper_model is not None and (current_time - whisper_model_timestamp) < WHISPER_MODEL_CACHE_DURATION:
+        print("⚡ Using cached Whisper model")
+        return whisper_model
+    
+    # Load or reload the model
+    try:
+        whisper_model_loading = True
+        import whisper
+        print("🔄 Loading Whisper model...")
+        whisper_model = whisper.load_model("base")
+        whisper_model_timestamp = time.time()
+        print("✅ Whisper model loaded successfully")
+    except Exception as e:
+        print(f"⚠️  Failed to load Whisper model: {e}")
+        whisper_model = None
+    finally:
+        whisper_model_loading = False
+    return whisper_model
+
+# Load model on startup
+load_whisper_model()
 
 from app.article_reading.pipeline import execute_pipeline
 from app.question_answering.pipeline import ask_general_question
@@ -78,6 +112,27 @@ app.add_middleware(
 async def read_root():
     return {"Hello": "World"}
 
+@app.get("/health")
+async def health_check():
+    global whisper_model, whisper_model_timestamp
+    
+    # Check Whisper model status
+    model_status = "loaded" if whisper_model is not None else "not loaded"
+    
+    # Calculate model age if loaded
+    model_age = 0
+    if whisper_model is not None:
+        import time
+        model_age = time.time() - whisper_model_timestamp
+    
+    return {
+        "status": "healthy",
+        "whisper_model": {
+            "status": model_status,
+            "age_seconds": model_age
+        }
+    }
+
 @app.post("/document_recognition")
 async def document_recognition(file: UploadFile = File(...)):
     try:
@@ -126,7 +181,6 @@ async def music_detection(file: UploadFile = File(...)):
         print(e)
         raise HTTPException(status_code=500, detail="Internal server error")
 
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
 # --- Modified API Endpoint ---
 # @app.post("/transcribe_audio_v2")
