@@ -450,49 +450,86 @@ const executeMusicCommand = async (action: string) => {
   switch (action) {
     case 'detect':
       showFeedback('Detecting music');
-
-      // Stop the microphone before music detection
-      stopRecording();
-
+      
+      // Directly trigger the Spotify detection by clicking the button
       try {
-        await spotifyStore.detectMusic();
-        console.log("Music detected:", spotifyStore.currentTrack);
-      } catch (error) {
-        showFeedback('Failed to detect music. Please try again.');
-        console.error('Music detection error:', error);
-      } finally {
-        // Restart the microphone after music detection is complete
-        startRecording();
+        // Find and click the "Detect Music" button directly in the DOM
+        // This is the most reliable approach since it doesn't depend on component references
+        
+        // Look for the button containing "Detect Music" text
+        let detectMusicButton = null;
+        const buttons = document.querySelectorAll('button');
+        for (let button of buttons) {
+          if (button.textContent && button.textContent.trim() === 'Detect Music') {
+            detectMusicButton = button;
+            break;
+          }
+        }
+        
+        if (detectMusicButton) {
+          (detectMusicButton as HTMLElement).click();
+        } else {
+          // If we can't find the button, check if we're on the right feature
+          if (props.selectedFeature !== 'Music') {
+            showFeedback(`Please select the Music feature first before detecting music.`);
+          } else {
+            showFeedback(`Could not find the Detect Music button. Make sure you're authenticated with Spotify.`);
+          }
+        }
+      } catch (error: any) {
+        console.error("Error clicking detect music button:", error);
+        showFeedback(`Failed to detect music: ${error.message || 'Unknown error'}`);
       }
       break;
 
     case 'play':
-      showFeedback('Playing music');
-      if (spotifyStore.currentTrack) {
-        spotifyStore.playMusic();
-      } else {
-        showFeedback('No music is currently loaded.');
-      }
-      break;
-
     case 'pause':
-      showFeedback('Pausing music');
-      if (spotifyStore.isPlaying) {
-        spotifyStore.pauseMusic();
-      } else {
-        showFeedback('Music is already paused.');
+      try {
+        // Find and click the play/pause button directly in the DOM
+        // This button has a dynamic SVG icon based on the current state
+        const playPauseButton = document.querySelector('button.bg-green-500');
+        
+        if (playPauseButton) {
+          (playPauseButton as HTMLElement).click();
+          showFeedback(action === 'play' ? 'Playing music' : 'Pausing music');
+        } else {
+          // If we can't find the button, check if we're on the right feature
+          if (props.selectedFeature !== 'Music') {
+            showFeedback(`Please select the Music feature first.`);
+          } else {
+            showFeedback(`Could not find the play/pause button. Make sure a song is loaded.`);
+          }
+        }
+      } catch (error: any) {
+        console.error(`Error clicking ${action} button:`, error);
+        showFeedback(`Failed to ${action} music: ${error.message || 'Unknown error'}`);
       }
       break;
   }
 };
 
 const executeCameraCommand = async (action: string) => {
-  console.log("Taking a snapshot with current feature:", action)
-  if (props.cameraRef && props.cameraRef.value) {
-    await props.cameraRef.value.takeSnapshot() // Dereference the Ref
-    showFeedback(`Capturing snapshot for ${action}...`)
-  } else {
-    showFeedback(`Camera not ready.`)
+  console.log("Taking a snapshot with current feature:", action);
+  
+  try {
+    // Find and click the "Take Snapshot" button directly in the DOM
+    // This is the most reliable approach since it doesn't depend on component references
+    const snapshotButton = document.querySelector('button[aria-label="Take a snapshot"]');
+    
+    if (snapshotButton) {
+      (snapshotButton as HTMLElement).click();
+      showFeedback(`Capturing snapshot for ${action}...`);
+    } else {
+      // If we can't find the button, check if we're on the right feature
+      if (props.selectedFeature !== 'Text') {
+        showFeedback(`Please select the Text feature first before taking a snapshot.`);
+      } else {
+        showFeedback(`Could not find the Take Snapshot button. Make sure the camera has finished loading.`);
+      }
+    }
+  } catch (error: any) {
+    console.error("Error clicking snapshot button:", error);
+    showFeedback(`Failed to capture snapshot: ${error.message || 'Unknown error'}`);
   }
 }
 
@@ -565,7 +602,45 @@ onMounted(() => {
   startRecording();
   // Start checking if system is speaking
   speechCheckInterval = setInterval(checkIfSpeaking, 100); // Check every 100ms
+  
+  // Listen for music detection event from SpotifyFeature
+  window.addEventListener('stop-voice-recording-for-music-detection', handleMusicDetectionEvent);
+  
+  // Listen for Spotify errors
+  window.addEventListener('spotify-error', handleSpotifyError);
 });
+
+const handleMusicDetectionEvent = () => {
+  console.log('Received music detection event, stopping recording');
+  // Stop the microphone before music detection
+  stopRecording();
+  
+  // Also clear the interval to prevent automatic restart
+  if (intervalId) {
+    clearInterval(intervalId);
+  }
+  
+  // Temporarily disable the speech check to prevent automatic restart
+  if (speechCheckInterval) {
+    clearInterval(speechCheckInterval);
+  }
+  
+  // Restart recording after a delay to allow music detection to complete
+  setTimeout(() => {
+    console.log('Restarting recording after music detection');
+    startRecording();
+    // Re-enable the speech check
+    speechCheckInterval = setInterval(checkIfSpeaking, 100);
+   
+  }, 13000); // Wait 13 seconds for music detection to complete
+};
+
+const handleSpotifyError = (event: any) => {
+  const detail = event.detail as { message: string };
+  if (detail && detail.message) {
+    showFeedback(detail.message);
+  }
+};
 
 onUnmounted(() => {
   stopRecording();
@@ -576,6 +651,9 @@ onUnmounted(() => {
   if (speechCheckInterval) {
     clearInterval(speechCheckInterval);
   }
+  // Remove event listeners
+  window.removeEventListener('stop-voice-recording-for-music-detection', handleMusicDetectionEvent);
+  window.removeEventListener('spotify-error', handleSpotifyError);
 });
 </script>
 

@@ -6,16 +6,20 @@ from typing import Dict, Any
 # Try to import whisper, but don't fail if it's not available
 try:
     import whisper
-    # Use the preloaded model from main.py
-    from ..main import whisper_model
-    model = whisper_model
 except ImportError:
     whisper = None
-    model = None
 
 import time
 
 def transcribe_audio(audio_file_path):
+    # Import the whisper model when needed to avoid circular import issues
+    try:
+        from ..main import whisper_model
+        model = whisper_model
+    except ImportError:
+        print("❌ Failed to import whisper model from main")
+        return {"error": "Failed to import whisper model from main."}
+    
     # Check if whisper is available
     if whisper is None or model is None:
         print("❌ Whisper model not available")

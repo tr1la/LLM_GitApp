@@ -118,6 +118,8 @@
 import { ref } from 'vue';
 import { useSpotifyStore } from '@/stores/spotify';
 
+const emit = defineEmits(['detect-music-clicked']);
+
 const spotifyStore = useSpotifyStore();
 const isDetecting = ref(false);
 
@@ -130,6 +132,9 @@ const authenticateWithSpotify = async () => {
 };
 
 const detectMusic = async () => {
+  // Emit event to stop recording in parent component
+  emit('detect-music-clicked');
+  
   try {
     isDetecting.value = true;
     await spotifyStore.detectMusic();

@@ -32,7 +32,10 @@
           
           <!-- Music Feature -->
           <div v-if="selectedFeature === 'Music'" class="flex justify-center w-full h-full">
-            <SpotifyFeature class="w-full" />
+            <SpotifyFeature 
+              ref="spotifyFeatureRef"
+              class="w-full" 
+              @detect-music-clicked="handleDetectMusicClicked" />
           </div>
           
           <!-- News Feature -->
@@ -85,6 +88,7 @@ import ChatFeature from '@/components/features/ChatFeature.vue';
 
 // Refs
 const cameraFeatureRef = ref();
+const spotifyFeatureRef = ref();
 const selectedFeature = ref<string>('Text');
 const isSettingsModalOpen = ref<boolean>(false);
 const isAboutModalOpen = ref<boolean>(false);
@@ -130,6 +134,12 @@ watch(cameraResponseText, async (newValue) => {
 
 const openSpotifyFeature = () => {
   selectedFeature.value = 'Music';
+};
+
+const handleDetectMusicClicked = () => {
+  // This function would need to communicate with VoiceCommand to stop recording
+  // For now, we'll use a global event approach
+  window.dispatchEvent(new CustomEvent('stop-voice-recording-for-music-detection'));
 };
 
 // Lifecycle

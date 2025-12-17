@@ -39,7 +39,7 @@ def load_whisper_model():
         whisper_model_loading = True
         import whisper
         print("🔄 Loading Whisper model...")
-        whisper_model = whisper.load_model("base")
+        whisper_model = whisper.load_model("base.en")
         whisper_model_timestamp = time.time()
         print("✅ Whisper model loaded successfully")
     except Exception as e:
@@ -78,6 +78,9 @@ import requests
 from collections import OrderedDict
 from .all_task.pipeline import get_llm_response
 import urllib.parse
+
+# Initialize the sentence transformer model
+embedder = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Load .env from the project root
 env_path = Path(__file__).parent.parent / ".env"

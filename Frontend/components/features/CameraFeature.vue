@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits, onMounted, nextTick } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 
 const props = defineProps({
   featureType: {
@@ -58,14 +58,25 @@ onMounted(async () => {
   // Wait for camera component to mount
   await nextTick();
   
-  // Give the camera time to initialize (2 seconds)
-  setTimeout(() => {
+  // Poll for camera readiness (check every 200ms for up to 5 seconds)
+  let attempts = 0;
+  const maxAttempts = 25; // 5 seconds with 200ms intervals
+  
+  const checkCameraReady = () => {
+    attempts++;
     if (cameraRef.value) {
       cameraReady.value = true;
+      console.log('Camera is ready');
+    } else if (attempts < maxAttempts) {
+      setTimeout(checkCameraReady, 200);
     } else {
-      cameraError.value = 'Camera initialization failed';
+      cameraError.value = 'Camera initialization timed out';
+      console.log('Camera initialization timed out');
     }
-  }, 2000);
+  };
+  
+  // Start checking for camera readiness
+  checkCameraReady();
 });
 
 const handleCameraError = (error: any) => {
@@ -75,21 +86,35 @@ const handleCameraError = (error: any) => {
 
 // Methods
 const takeSnapshot = async () => {
+  console.log('Taking snapshot...');
+  console.log('Camera ref value:', cameraRef.value);
+  
   try {
     if (!cameraRef.value) {
       cameraError.value = 'Camera not ready';
+      console.log('Camera ref is null or undefined');
       return;
     }
     
     // Wait a bit for the camera to be ready
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    const blob = await cameraRef.value?.snapshot?.();
+    // Check if snapshot method exists
+    if (typeof cameraRef.value.snapshot !== 'function') {
+      cameraError.value = 'Camera snapshot method not available';
+      console.log('Camera snapshot method not available');
+      console.log('Camera ref value structure:', Object.keys(cameraRef.value || {}));
+      return;
+    }
+    
+    const blob = await cameraRef.value.snapshot();
     if (blob) {
       emit('take-snapshot', blob);
       cameraError.value = null;
+      console.log('Snapshot captured successfully');
     } else {
       cameraError.value = 'Failed to capture snapshot - no data';
+      console.log('Snapshot returned no data');
     }
   } catch (error: any) {
     cameraError.value = `Snapshot error: ${error?.message || 'Unknown error'}`;
@@ -97,9 +122,17 @@ const takeSnapshot = async () => {
   }
 };
 
-// Expose snapshot method to parent
+// Expose methods to parent
 defineExpose({
-  takeSnapshot
+  takeSnapshot,
+  camera: cameraRef,
+  isCameraReady: () => cameraReady.value && cameraRef.value !== null,
+  getCameraStatus: () => ({
+    isReady: cameraReady.value && cameraRef.value !== null,
+    hasError: cameraError.value !== null,
+    errorMessage: cameraError.value,
+    isClient: isClient.value
+  })
 });
 </script>
 

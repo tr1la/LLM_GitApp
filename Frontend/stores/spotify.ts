@@ -254,7 +254,8 @@ export const useSpotifyStore = defineStore('spotify', {
                     this.isPlaying = false;
                     this.playbackPosition = 0; // Reset position
                 } else {
-                    alert("Could not recognize any song.");
+                    // Emit event for VoiceCommand to show feedback
+                    window.dispatchEvent(new CustomEvent('spotify-error', { detail: { message: 'Could not recognize any song.' } }));
                 }
             } catch (err) {
                 console.error("Microphone error:", err);
