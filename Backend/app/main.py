@@ -9,6 +9,15 @@ import openai
 from pydantic import BaseModel, Json
 from sympy import content
 
+# Preload Whisper model for better performance
+try:
+    import whisper
+    whisper_model = whisper.load_model("turbo")
+    print("✅ Whisper model loaded successfully")
+except Exception as e:
+    print(f"⚠️  Failed to load Whisper model: {e}")
+    whisper_model = None
+
 from app.article_reading.pipeline import execute_pipeline
 from app.question_answering.pipeline import ask_general_question
 from app.utils.audio import FEATURE_KEYWORDS_FOR_SEMANTIC_MATCH, FEATURE_LABELS, FEATURE_NAMES, find_navigation_intent, route_query_semantically

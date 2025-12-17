@@ -1,0 +1,11 @@
+# Bỏ qua tất cả các tệp .log
+*.log
+
+# Bỏ qua thư mục node_modules và các tệp .DS_Store
+node_modules/
+.DS_Store
+__pycache__/
+# Bỏ qua thư mục build
+build/
+
+# Bỏ qua tệp cấu hình môi trường
