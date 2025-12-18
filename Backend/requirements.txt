@@ -22,3 +22,4 @@ pyzbar==0.1.9
 sentence-transformers==4.0.2
 tf-keras==2.19.0
 uvicorn>=0.38.0
+ddgs>=9.10.0
