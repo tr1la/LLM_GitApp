@@ -55,29 +55,57 @@ Original query: "{original_query}"
     return result.content.strip()
 
 
-# ---- SERPAPI SEARCH ----
-def serpapi_search(query: str, num_results=5):
-    params = {
-        "q": query,
-        "api_key": os.getenv("SERPAPI_API_KEY"),
-        "engine": "google",
-        "num": num_results
-    }
-    response = requests.get("https://serpapi.com/search", params=params)
-    data = response.json()
+# ---- LLM-BASED SEARCH ----
+from ddgs import DDGS
 
-    results = []
-    if "organic_results" in data:
-        for result in data["organic_results"][:num_results]:
-            title = result.get("title")
-            link = result.get("link")
-            results.append((title, link))
+def llm_search(query: str, llm, num_results=3):
+    """
+    1. Dùng LLM để tối ưu hóa từ khóa tìm kiếm (tùy chọn).
+    2. Dùng DuckDuckGo để tìm link THẬT.
+    """
+    print(f"\n🔍 Searching for: {query}")
 
-    print("\n📄 SerpAPI Titles and URLs:\n")
-    for title, url in results:
-        print(f"📰 {title}\n🔗 {url}\n")
+    # Bước 1: (Tùy chọn) Dùng LLM để tạo từ khóa tìm kiếm tốt hơn
+    # Ví dụ: User hỏi "AI mới nhất", LLM đổi thành "latest artificial intelligence news 2024"
+    search_query = query 
+    try:
+        refine_prompt = f"Convert this user question into a generic search engine keyword (e.g. Google) to find news articles. Return ONLY the keyword.\nQuestion: {query}"
+        response = llm.invoke(refine_prompt) # Bỏ comment nếu muốn dùng LLM
+        search_query = response.content.strip()
+    except:
+        pass
 
-    return [url for _, url in results]
+    # Bước 2: Tìm kiếm thật bằng DuckDuckGo
+    real_urls = []
+    try:
+        with DDGS() as ddgs:
+            # Tìm kiếm tin tức (news) hoặc web thông thường
+            results = ddgs.news(search_query, max_results=num_results + 2) # Lấy dư ra chút
+            
+            for r in results:
+                # r là dict: {'title': ..., 'url': ..., 'body': ..., 'date': ...}
+                link = r.get('url')
+                if link:
+                    real_urls.append(link)
+                    print(f"✅ Found: {link}")
+                
+                if len(real_urls) >= num_results:
+                    break
+                    
+    except Exception as e:
+        print(f"❌ Search Error: {e}")
+        # Fallback nếu lỗi mạng
+        return [
+            "https://www.bbc.com/news/technology",
+            "https://techcrunch.com/",
+            "https://www.theverge.com/"
+        ][:num_results]
+
+    if not real_urls:
+         print("⚠️ No results found via search engine.")
+         return []
+
+    return real_urls
 
 
 # ---- ARTICLE EXTRACTION ----
@@ -140,13 +168,13 @@ def execute_pipeline(user_query: str, provider="openai"):  # Changed default fro
     print(f"🔍 Original Query:\n{user_query}\n")
 
     # Step 1: Refine Query
-    # refined_query = refine_query(llm, user_query)
-    # print(f"🎯 Refined Query:\n{refined_query}\n")
+    #refined_query = refine_query(llm, user_query)
+    #print(f"🎯 Refined Query:\n{refined_query}\n")
 
     refined_query = user_query
 
-    # Step 2: Search with SerpAPI
-    urls = serpapi_search(refined_query)
+    # Step 2: Search with LLM
+    urls = llm_search(refined_query, llm)
     print(f"🔗 Extracted URLs:\n{urls}\n")
 
 
