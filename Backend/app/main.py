@@ -414,9 +414,11 @@ async def general_qa(message: str = Form(...)):
         print(f"[DEBUG] LLM Response: {answer}", flush=True)
 
         # Step 4: Convert answer back to speech
-        audio_path = format_audio_response(answer, "general_question_answering")
-        print(f"[DEBUG] Audio path: {audio_path}", flush=True)
-
+        #audio_path = format_audio_response(answer, "general_question_answering")
+        #print(f"[DEBUG] Audio path: {audio_path}", flush=True)
+        return JSONResponse(content={
+                "reply": answer,
+            }, status_code=200) 
         if audio_path:
             print(f"[DEBUG] Returning 200 OK with reply: {answer}", flush=True)
             return JSONResponse(content={
